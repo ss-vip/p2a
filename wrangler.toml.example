@@ -1,0 +1,18 @@
+name = "p2a"
+main = "src/index.js"
+compatibility_date = "2026-05-18"
+compatibility_flags = ["nodejs_compat"]
+
+[placement]
+mode = "smart"
+
+# 允許載入文字檔
+rules = [
+  { type = "Text", globs = ["**/*.html"] }
+]
+
+# D1 資料庫
+[[d1_databases]]
+binding = "DB"
+database_name = "p2a-db"
+database_id = "your-db-uuid"
