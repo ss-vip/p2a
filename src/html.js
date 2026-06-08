@@ -198,13 +198,11 @@ export function dashboardHtml(origin) {
             <button class="btn btn-outline-secondary d-none flex-shrink-0" id="stop-btn" style="height:44px">停止</button>
           </div>
 
-          <!-- Image generation input (hidden by default) -->
           <div class="d-flex gap-2 input-row d-none" id="image-input-row">
             <textarea class="form-control" id="image-prompt-input" placeholder="輸入圖片描述..." maxlength="1024" rows="2" style="min-height:44px;resize:vertical"></textarea>
             <button class="btn btn-primary flex-shrink-0" id="gen-image-btn" style="height:44px" disabled>SEND</button>
           </div>
 
-          <!-- Image edit input (hidden by default) -->
           <div class="d-flex gap-2 input-row d-none" id="image-edit-input-row">
             <div class="d-flex flex-column gap-1 flex-fill">
               <textarea class="form-control" id="edit-prompt-input" placeholder="編輯描述..." maxlength="1024" rows="2" style="min-height:44px;resize:vertical"></textarea>
@@ -359,7 +357,6 @@ tokenInput.addEventListener('input', () => {
   verifyBtn.disabled = tokenInput.value.trim().length < 10
 })
 
-// Sign in with Puter — 使用 Puter SDK browser-based auth (官方推薦方式)
 signinPuterBtn.addEventListener('click', async () => {
   try {
     signinPuterBtn.disabled = true
@@ -376,19 +373,18 @@ signinPuterBtn.addEventListener('click', async () => {
         setTokenStatus('success', '已透過 Puter 登入！', 'success')
         await loadTokenInfo()
       } else {
-        setTokenStatus('error', '✗ 授權失敗: ' + (data.error || '伺服器錯誤'), 'danger')
+        setTokenStatus('error', '授權失敗: ' + (data.error || '伺服器錯誤'), 'danger')
       }
     } else {
-      setTokenStatus('error', '✗ 授權失敗或使用者取消', 'danger')
+      setTokenStatus('error', '授權失敗或使用者取消', 'danger')
     }
   } catch (e) {
-    setTokenStatus('error', '✗ 授權異常: ' + e.message, 'danger')
+    setTokenStatus('error', '授權異常: ' + e.message, 'danger')
   }
   signinPuterBtn.disabled = false
   signinPuterBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> 使用 Puter 帳號登入'
 })
 
-// 手動輸入 Token — 直接調用 Puter driver API 驗證（不經 SDK）
 verifyBtn.addEventListener('click', async () => {
   const token = tokenInput.value.trim()
   if (!token) return
@@ -408,7 +404,7 @@ verifyBtn.addEventListener('click', async () => {
       setTokenStatus('error', '✗ ' + (data.error || 'Token 無效'), 'danger')
     }
   } catch (e) {
-    setTokenStatus('error', '✗ 請求失敗: ' + e.message, 'danger')
+    setTokenStatus('error', '請求失敗: ' + e.message, 'danger')
   }
   verifyBtn.disabled = false
 })
@@ -459,7 +455,6 @@ rotateBtn.addEventListener('click', async () => {
   }
 })
 
-// Load token info
 async function loadTokenInfo() {
   try {
     const res = await fetch(API + '/api/token/info')
@@ -496,7 +491,6 @@ function updatePuterStatus() {
   }
 }
 
-// Fetch models from Puter
 fetchModelsBtn.addEventListener('click', async () => {
   if (!puterToken) {
     setSysStatus('error', '請先設定 Puter Token')
@@ -905,7 +899,6 @@ function setSysStatus(state, text) {
   sysText.textContent = text
 }
 
-// Clipboard copy - Base URL
 const baseUrlInput = $('api-base-url')
 const baseUrlCopyBtn = $('copy-base-url')
 if (baseUrlCopyBtn && baseUrlInput) {

@@ -78,7 +78,6 @@ export async function extractImageFromResponse(response) {
   const text = await response.clone().text()
   const trimmed = text.trim()
 
-  // 嘗試解析為單一 JSON 物件
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
     try {
       const json = JSON.parse(trimmed)

@@ -1,14 +1,14 @@
 {
-  "name": "puter-sdk-2api",
+  "name": "puter-2api",
   "type": "module",
   "version": "1.0.0",
-  "description": "Puter SDK with token to API",
+  "description": "Puter service to API",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "hono": "^4.12.23"
+    "hono": "^4.12.24"
   },
   "devDependencies": {
     "wrangler": "^4.98.0"

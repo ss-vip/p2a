@@ -100,7 +100,6 @@ app.post('/api/auth/password', async (c) => {
     if (currentHash !== hash) return c.json({ error: '目前密碼錯誤' }, 401)
   }
 
-  // newPassword 為空字串 → 清除密碼
   if (!newPassword) {
     await setDashboardPassword(db, '')
     return c.json({ ok: true, cleared: true })
@@ -161,7 +160,7 @@ function puterToOpenAIStream(requestId, model) {
             }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(openai)}\n\n`))
           }
-        } catch (_) { /* skip */ }
+        } catch (_) {}
       }
     },
     flush(controller) {
@@ -420,14 +419,12 @@ app.post('/api/playground/image', async (c) => {
   if (!prompt) return c.json({ error: 'prompt 為必填' }, 400)
 
   try {
-    // 使用專用的 txt2img 驅動程式介面
     const upstream = await callTxt2ImgDriver(tokenRow.token, model, prompt)
     if (!upstream.ok) {
       const err = await upstream.text()
       return c.json({ error: `Puter API 錯誤 (${upstream.status}): ${err.slice(0, 500)}` }, 502)
     }
 
-    // 嘗試從回應中提取圖片
     const image = await extractImageFromResponse(upstream)
     if (image) {
       if (image.base64) {
@@ -438,7 +435,6 @@ app.post('/api/playground/image', async (c) => {
       }
     }
 
-    // 後備：以 collectPuterMedia 解析 NDJSON
     const result = await collectPuterMedia(upstream.clone())
     if (result.images.length > 0) {
       return c.json({ data: result.images.map(url => ({ url })), content: result.text })
@@ -465,7 +461,6 @@ app.post('/api/playground/image-edit', async (c) => {
 
   let args
   if (inputImage) {
-    // 透過 vision 格式傳送圖片
     args = {
       messages: [{ role: 'user', content: [
         { type: 'text', text: prompt },
@@ -510,7 +505,6 @@ app.post('/api/playground/image-edit', async (c) => {
 // ─── 路由: OpenAI 相容 API ──────────────────────────────────
 
 app.get('/v1/models', async (c) => {
-  // 先從 DB 讀取已儲存的模型
   const db = c.env?.DB
   let models = []
   if (db) {
@@ -526,7 +520,6 @@ app.get('/v1/models', async (c) => {
     }
   }
 
-  // 無儲存模型時回傳精選列表
   const fallback = [
     'gpt-4o-mini', 'gpt-4o', 'gpt-5', 'gpt-5-mini', 'gpt-5-nano',
     'o1', 'o1-mini', 'o3-mini', 'o4-mini',
@@ -632,7 +625,6 @@ app.post('/v1/images/generations', async (c) => {
       }
     }
 
-    // 後備：NDJSON 解析
     const result = await collectPuterMedia(upstream.clone())
     if (result.images.length > 0) {
       return c.json({
@@ -695,21 +687,21 @@ app.post('/v1/images/edits', async (c) => {
       if (mimeMatch) mimeType = mimeMatch[1]
       imageBase64 = parts[1]
     }
-      args = {
-        messages: [{ role: 'user', content: [
-          { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
-        ] }],
-        model: editModel,
-        stream: true,
-      }
-    } else {
-      args = {
-        messages: [{ role: 'user', content: prompt }],
-        model: editModel,
-        stream: true,
-      }
+    args = {
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: prompt },
+        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
+      ] }],
+      model: editModel,
+      stream: true,
     }
+  } else {
+    args = {
+      messages: [{ role: 'user', content: prompt }],
+      model: editModel,
+      stream: true,
+    }
+  }
 
   const payload = {
     interface: 'puter-chat-completion',
