@@ -11,7 +11,7 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { getDriver, callDriver, verifyPuterToken, fetchModels } from './lib/puter.js'
+import { getDriver, callDriver, callTxt2ImgDriver, extractImageFromResponse, verifyPuterToken, fetchModels } from './lib/puter.js'
 import { initDB, getActiveToken, saveToken, deleteActiveToken, getClientToken, rotateClientToken, saveModels, getModels, getDashboardPasswordHash, setDashboardPassword } from './lib/db.js'
 import { cacheGet, cacheSet, cacheDelete } from './lib/cache.js'
 import { dashboardHtml } from './html.js'
@@ -419,23 +419,27 @@ app.post('/api/playground/image', async (c) => {
   const { model = 'gemini-2.5-flash-image', prompt } = body
   if (!prompt) return c.json({ error: 'prompt 為必填' }, 400)
 
-  const args = { messages: [{ role: 'user', content: prompt }], model, stream: true }
-  const payload = {
-    interface: 'puter-chat-completion',
-    driver: 'ai-chat',
-    test_mode: false,
-    method: 'complete',
-    args,
-  }
-
   try {
-    const upstream = await callDriver(tokenRow.token, payload)
+    // 使用專用的 txt2img 驅動程式介面
+    const upstream = await callTxt2ImgDriver(tokenRow.token, model, prompt)
     if (!upstream.ok) {
       const err = await upstream.text()
       return c.json({ error: `Puter API 錯誤 (${upstream.status}): ${err.slice(0, 500)}` }, 502)
     }
 
-    const result = await collectPuterMedia(upstream)
+    // 嘗試從回應中提取圖片
+    const image = await extractImageFromResponse(upstream)
+    if (image) {
+      if (image.base64) {
+        return c.json({ data: [{ url: `data:image/png;base64,${image.base64}` }] })
+      }
+      if (image.url) {
+        return c.json({ data: [{ url: image.url }] })
+      }
+    }
+
+    // 後備：以 collectPuterMedia 解析 NDJSON
+    const result = await collectPuterMedia(upstream.clone())
     if (result.images.length > 0) {
       return c.json({ data: result.images.map(url => ({ url })), content: result.text })
     }
@@ -603,17 +607,8 @@ app.post('/v1/images/generations', async (c) => {
     error: { message: 'prompt 為必填', code: 'missing_field' },
   }, 400)
 
-  const args = { messages: [{ role: 'user', content: prompt }], model, stream: true }
-  const payload = {
-    interface: 'puter-chat-completion',
-    driver: 'ai-chat',
-    test_mode: false,
-    method: 'complete',
-    args,
-  }
-
   try {
-    const upstream = await callDriver(tokenRow.token, payload)
+    const upstream = await callTxt2ImgDriver(tokenRow.token, model, prompt)
     if (!upstream.ok) {
       const err = await upstream.text()
       return c.json({
@@ -621,8 +616,24 @@ app.post('/v1/images/generations', async (c) => {
       }, 502)
     }
 
-    const result = await collectPuterMedia(upstream)
+    const image = await extractImageFromResponse(upstream)
+    if (image) {
+      if (image.base64) {
+        return c.json({
+          created: Math.floor(Date.now() / 1000),
+          data: [{ url: `data:image/png;base64,${image.base64}` }],
+        })
+      }
+      if (image.url) {
+        return c.json({
+          created: Math.floor(Date.now() / 1000),
+          data: [{ url: image.url }],
+        })
+      }
+    }
 
+    // 後備：NDJSON 解析
+    const result = await collectPuterMedia(upstream.clone())
     if (result.images.length > 0) {
       return c.json({
         created: Math.floor(Date.now() / 1000),

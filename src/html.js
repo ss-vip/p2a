@@ -200,14 +200,14 @@ export function dashboardHtml(origin) {
 
           <!-- Image generation input (hidden by default) -->
           <div class="d-flex gap-2 input-row d-none" id="image-input-row">
-            <input type="text" class="form-control" id="image-prompt-input" placeholder="輸入圖片描述..." maxlength="1024" style="min-height:44px">
+            <textarea class="form-control" id="image-prompt-input" placeholder="輸入圖片描述..." maxlength="1024" rows="2" style="min-height:44px;resize:vertical"></textarea>
             <button class="btn btn-primary flex-shrink-0" id="gen-image-btn" style="height:44px" disabled>SEND</button>
           </div>
 
           <!-- Image edit input (hidden by default) -->
           <div class="d-flex gap-2 input-row d-none" id="image-edit-input-row">
             <div class="d-flex flex-column gap-1 flex-fill">
-              <input type="text" class="form-control" id="edit-prompt-input" placeholder="編輯描述..." maxlength="1024" style="min-height:44px">
+              <textarea class="form-control" id="edit-prompt-input" placeholder="編輯描述..." maxlength="1024" rows="2" style="min-height:44px;resize:vertical"></textarea>
               <div class="d-flex align-items-center gap-2">
                 <input type="file" class="form-control form-control-sm" id="edit-image-file" accept="image/*" style="max-width:200px">
                 <img id="image-preview" class="d-none">
@@ -324,7 +324,7 @@ logoutBtn.addEventListener('click', () => {
 
 // ─── 功能切換 ────────────────────────────────────────────────
 
-funcSelect.addEventListener('change', () => {
+funcSelect.addEventListener('change', async () => {
   const mode = funcSelect.value
   const isChat = mode === 'chat'
   const isImage = mode === 'image'
@@ -337,6 +337,15 @@ funcSelect.addEventListener('change', () => {
   if (isChat) chatInput.focus()
   else if (isImage) imagePromptInput.focus()
   else if (isEdit) editPromptInput.focus()
+  // 根據功能篩選模型
+  try {
+    const res = await fetch(API + '/api/models')
+    const data = await res.json()
+    const models = data.models || []
+    populateModelSelect(models, mode)
+  } catch (_) {
+    populateModelSelect([], mode)
+  }
 })
 
 // Toggle token visibility
@@ -526,26 +535,66 @@ async function renderModels() {
     modelGrid.classList.remove('d-none')
     modelGrid.innerHTML = models.map(m => {
       const ctx = m.context ? '<span class="badge bg-info" title="Max Token: ' + m.context + '" style="font-size:9px;padding:1px 5px">' + m.context + '</span>' : ''
-      return '<div class="model-item" style="cursor:pointer" data-copy="' + m.id + '"><div class="font-monospace" style="font-size:11px">' + m.id + ' ' + ctx + '</div><div class="text-body-tertiary" style="font-size:9px">' + (m.provider || '—') + '</div></div>'
+      let typeLabel = ''
+      try {
+        const det = JSON.parse(m.details || '{}')
+        const t = det.type || det.model_type || det.capabilities?.type || ''
+        if (t) typeLabel = ' <span class="badge ' + (t === 'image' ? 'bg-warning text-dark' : t === 'text' || t === 'chat' ? 'bg-primary' : 'bg-secondary') + '" style="font-size:8px;padding:1px 4px">' + t + '</span>'
+      } catch (_) {}
+      return '<div class="model-item" style="cursor:pointer" data-copy="' + m.id + '"><div class="font-monospace" style="font-size:11px">' + m.id + typeLabel + ' ' + ctx + '</div><div class="text-body-tertiary" style="font-size:9px">' + (m.provider || '—') + '</div></div>'
     }).join('')
-    populateModelSelect(models)
+    populateModelSelect(models, funcSelect.value)
   } catch (_) {}
 }
 
-function populateModelSelect(models) {
+function getModelType(m) {
+  try {
+    const det = JSON.parse(m.details || '{}')
+    return (det.type || det.model_type || det.capabilities?.type || '').toLowerCase()
+  } catch (_) { return '' }
+}
+
+function filterModelsByFunc(models, func) {
+  const typeMap = {
+    chat: ['text', 'chat', 'vision', ''],
+    'image': ['image'],
+    'image-edit': ['image', 'vision', 'text', 'chat'],
+    tts: ['audio'],
+    stt: ['audio'],
+    embedding: ['embedding'],
+  }
+  const allowed = typeMap[func] || ['text', 'chat', '']
+  return models.filter(m => allowed.includes(getModelType(m)))
+}
+
+function populateModelSelect(models, filterFunc) {
   const current = modelSelect.value
+  const func = filterFunc || funcSelect.value
+  let filtered = filterModelsByFunc(models, func)
+  // 如果有 image-edit 但找不到 image 模型，保留全部以利使用
+  if (func === 'image-edit' && filtered.length === 0 && models.length > 0) {
+    filtered = models
+  }
   modelSelect.innerHTML = ''
-  if (models.length > 0) {
-    models.forEach(m => {
+  if (filtered.length > 0) {
+    filtered.forEach(m => {
       const opt = document.createElement('option')
       opt.value = m.id
-      opt.textContent = m.id
+      opt.textContent = m.id + ' (' + (getModelType(m) || 'text') + ')'
       if (m.id === current) opt.selected = true
       modelSelect.appendChild(opt)
     })
   } else {
-    const defaults = ['gpt-4o-mini','gpt-4o','claude-sonnet-4','gemini-2.5-flash','gemini-2.5-flash-image','deepseek-chat','grok-3']
-    defaults.forEach(id => {
+    const defaults = {
+      chat: ['gpt-4o-mini','gpt-4o','claude-sonnet-4','gemini-2.5-flash','deepseek-chat','grok-3'],
+      'image': ['gemini-2.5-flash-image','gpt-image-1.5','dall-e-3'],
+      'image-edit': ['gemini-2.5-flash-image','gpt-4o','gpt-4o-mini'],
+      tts: ['tts-1'],
+      stt: ['whisper-1'],
+      embedding: ['text-embedding-3-small'],
+    }
+    const ids = defaults[func] || defaults.chat
+    ids.forEach(id => {
       const opt = document.createElement('option')
       opt.value = id; opt.textContent = id
       modelSelect.appendChild(opt)
@@ -746,7 +795,7 @@ imagePromptInput.addEventListener('input', () => {
   genImageBtn.disabled = !puterToken || !imagePromptInput.value.trim()
 })
 imagePromptInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); genImageBtn.click() }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); genImageBtn.click() }
 })
 
 // Image Edit (img2img)
@@ -828,7 +877,7 @@ editSendBtn.addEventListener('click', async () => {
 })
 
 editPromptInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); editSendBtn.click() }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); editSendBtn.click() }
 })
 
 function setTokenStatus(type, msg, bsColor) {
