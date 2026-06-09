@@ -184,18 +184,18 @@ app.post('/api/models/fetch', async (c) => {
 })
 
 app.post('/api/playground/chat', async (c) => {
-  const auth = await getEffectiveToken(c)
-  if (!auth) return c.json({ error: '請先設定 Puter Token 或填入 Key Pool' }, 401)
-  const body = await c.req.json()
-  const { model = 'gpt-4o-mini', messages, stream: clientStream = false } = body
-  if (!messages?.length) return c.json({ error: 'messages 為必填' }, 400)
-  const requestId = uuid()
-  const args = { messages, model, stream: true }
-  if (body.max_tokens) args.max_tokens = body.max_tokens
-  if (body.temperature !== undefined) args.temperature = body.temperature
-  if (body.tools) args.tools = body.tools
-  if (body.tool_choice) args.tool_choice = body.tool_choice
   try {
+    const auth = await getEffectiveToken(c)
+    if (!auth) return c.json({ error: '請先設定 Puter Token 或填入 Key Pool' }, 401)
+    const body = JSON.parse(await c.req.text())
+    const { model = 'gpt-4o-mini', messages, stream: clientStream = false } = body
+    if (!messages?.length) return c.json({ error: 'messages 為必填' }, 400)
+    const requestId = uuid()
+    const args = { messages, model, stream: true }
+    if (body.max_tokens) args.max_tokens = body.max_tokens
+    if (body.temperature !== undefined) args.temperature = body.temperature
+    if (body.tools) args.tools = body.tools
+    if (body.tool_choice) args.tool_choice = body.tool_choice
     const upstream = await callDriver(auth.token, { interface: 'puter-chat-completion', driver: getDriver(model), test_mode: false, method: 'complete', args })
     if (!upstream.ok) return c.json({ error: `Puter error (${upstream.status}): ${(await upstream.text()).slice(0, 500)}` }, 502)
     if (clientStream) {
@@ -217,19 +217,19 @@ app.get('/v1/models', async (c) => {
 })
 
 app.post('/v1/chat/completions', async (c) => {
-  const auth = await getEffectiveToken(c)
-  if (!auth) return c.json({ error: { message: 'Puter Token 未設定，請先至 Dashboard 設定或填入 Key Pool' } }, 401)
-  const body = await c.req.json()
-  const { model = 'gpt-4o-mini', messages, stream = false } = body
-  if (!messages?.length) return c.json({ error: { message: 'messages 為必填' } }, 400)
-  const requestId = 'chatcmpl-' + uuid().replace(/-/g, '').slice(0, 20)
-  const args = { messages, model, stream: true }
-  if (body.max_tokens) args.max_tokens = body.max_tokens
-  if (body.temperature !== undefined) args.temperature = body.temperature
-  if (body.top_p !== undefined) args.top_p = body.top_p
-  if (body.tools) args.tools = body.tools
-  if (body.tool_choice) args.tool_choice = body.tool_choice
   try {
+    const auth = await getEffectiveToken(c)
+    if (!auth) return c.json({ error: { message: 'Puter Token 未設定，請先至 Dashboard 設定或填入 Key Pool' } }, 401)
+    const body = JSON.parse(await c.req.text())
+    const { model = 'gpt-4o-mini', messages, stream = false } = body
+    if (!messages?.length) return c.json({ error: { message: 'messages 為必填' } }, 400)
+    const requestId = 'chatcmpl-' + uuid().replace(/-/g, '').slice(0, 20)
+    const args = { messages, model, stream: true }
+    if (body.max_tokens) args.max_tokens = body.max_tokens
+    if (body.temperature !== undefined) args.temperature = body.temperature
+    if (body.top_p !== undefined) args.top_p = body.top_p
+    if (body.tools) args.tools = body.tools
+    if (body.tool_choice) args.tool_choice = body.tool_choice
     const upstream = await callDriver(auth.token, { interface: 'puter-chat-completion', driver: getDriver(model), test_mode: false, method: 'complete', args })
     if (!upstream.ok) return c.json({ error: { message: `Puter 錯誤 (${upstream.status})`, code: 'upstream_error' } }, 502)
     if (stream) {

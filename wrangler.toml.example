@@ -1,4 +1,4 @@
-name = "p2a"
+name = "puter-2api"
 main = "src/index.js"
 compatibility_date = "2026-05-18"
 compatibility_flags = ["nodejs_compat"]
@@ -6,8 +6,13 @@ compatibility_flags = ["nodejs_compat"]
 [placement]
 mode = "smart"
 
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
+
 # D1 資料庫
 [[d1_databases]]
 binding = "DB"
-database_name = "p2a-db"
+database_name = "puter-2api-db"
 database_id = "your-db-uuid"

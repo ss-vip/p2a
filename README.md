@@ -1,4 +1,4 @@
-# Puter to API
+# puter-2api
 
 - 轉換為 openai 格式相容 API.
 - 佈署於 cloudflare workers.
