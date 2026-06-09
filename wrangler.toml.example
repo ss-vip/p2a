@@ -6,11 +6,6 @@ compatibility_flags = ["nodejs_compat"]
 [placement]
 mode = "smart"
 
-# 允許載入文字檔
-rules = [
-  { type = "Text", globs = ["**/*.html"] }
-]
-
 # D1 資料庫
 [[d1_databases]]
 binding = "DB"

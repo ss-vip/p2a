@@ -2,7 +2,7 @@
   "name": "puter-2api",
   "type": "module",
   "version": "1.0.0",
-  "description": "Puter service to API",
+  "description": "Puter service to chat API",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"

@@ -20,7 +20,6 @@ export function dashboardHtml(origin) {
   .chat-output .msg-assistant .bubble { display:inline-block; background:var(--bs-tertiary-bg); color:var(--bs-body-color); padding:8px 12px; border-radius:12px 12px 12px 4px; max-width:80%; white-space:pre-wrap; }
   .input-row { align-items:flex-end; flex-shrink:0; }
   .loading-dots { display:inline; }
-  #image-preview { max-width:120px; max-height:120px; border-radius:8px; object-fit:cover; }
   details summary { cursor: pointer; }
   .model-item { padding: 4px 10px; border: 1px solid var(--bs-border-color); border-radius: 4px; cursor: pointer; transition: background .15s; }
   .model-item:hover { background: var(--bs-tertiary-bg); }
@@ -86,30 +85,63 @@ export function dashboardHtml(origin) {
         </div>
       </div>
 
-      <!-- Puter Token -->
+      <!-- Puter 授權（三選一） -->
       <div class="card">
         <div class="card-body py-3">
-          <h6 class="card-title text-body-tertiary text-uppercase small d-flex align-items-center gap-1 mb-2">☁️ Puter 授權</h6>
-          <button class="btn btn-info w-100 mb-2" id="signin-puter-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            使用 Puter 帳號登入
-          </button>
-          <details class="small text-body-tertiary">
-            <summary>手動輸入 Token（進階）</summary>
-            <div class="mt-2">
-              <div class="input-group input-group-sm mb-2">
-                <input type="password" class="form-control" id="token-input" placeholder="eyJhbGciOiJIUzI1NiI..." minlength="10" maxlength="2048" spellcheck="false">
-                <button class="btn btn-outline-secondary" id="toggle-token-vis">👁</button>
-              </div>
-              <button class="btn btn-sm btn-outline-primary w-100" id="verify-btn" disabled>驗證並儲存</button>
+          <h6 class="card-title text-body-tertiary text-uppercase small d-flex align-items-center gap-1 mb-2">☁️ Puter 認證</h6>
+
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="small text-body-tertiary text-nowrap">擇一使用</span>
+            <select id="auth-mode-select" class="form-select form-select-sm">
+              <option value="puter-signin">🔑 Puter 登入</option>
+              <option value="manual-verify">✏️ 驗證金鑰</option>
+              <option value="key-pool">🗝️ 使用金鑰池</option>
+            </select>
+          </div>
+
+          <hr class="my-2">
+
+          <!-- 方式 A：Puter 登入 -->
+          <div id="auth-section-puter-signin">
+            <button class="btn btn-info w-100 mb-2" id="signin-puter-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              使用 Puter 帳號登入
+            </button>
+          </div>
+
+          <hr class="my-2">
+
+          <!-- 方式 B：驗證金鑰 -->
+          <div id="auth-section-manual-verify">
+            <div class="small text-body-tertiary mb-1">手動輸入 Token</div>
+            <div class="input-group input-group-sm mb-2">
+              <input type="password" class="form-control" id="token-input" placeholder="eyJhbGciOiJIUzI1NiI..." minlength="10" maxlength="2048" spellcheck="false">
+              <button class="btn btn-outline-secondary" id="toggle-token-vis">👁</button>
             </div>
-          </details>
-          <div id="token-status" class="small mt-2 d-none"></div>
-          <div id="token-info" class="mt-2 d-none">
-            <div class="d-flex justify-content-between small mb-1"><span class="text-body-tertiary">狀態</span><span id="ti-status">—</span></div>
-            <div class="d-flex justify-content-between small mb-1 align-items-center"><span class="text-body-tertiary">帳號</span><input class="form-control form-control-sm font-monospace text-end" id="ti-username" readonly value="—" style="font-size:11px;width:auto;flex:1;margin-left:8px;background:transparent;border:none;padding:0 4px;text-align:right"></div>
-            <div class="d-flex justify-content-between small mb-1"><span class="text-body-tertiary">Token</span><span id="ti-masked">—</span></div>
-            <button class="btn btn-sm btn-outline-danger w-100 mt-1" id="delete-token-btn">移除 Token</button>
+            <button class="btn btn-sm btn-outline-primary w-100 mb-1" id="verify-btn" disabled>驗證並儲存</button>
+            <div id="token-status" class="small mt-1 d-none"></div>
+            <div id="token-info" class="mt-1 d-none">
+              <div class="d-flex justify-content-between small mb-1"><span class="text-body-tertiary">狀態</span><span id="ti-status">—</span></div>
+              <div class="d-flex justify-content-between small mb-1 align-items-center"><span class="text-body-tertiary">帳號</span><input class="form-control form-control-sm font-monospace text-end" id="ti-username" readonly value="—" style="font-size:11px;width:auto;flex:1;margin-left:8px;background:transparent;border:none;padding:0 4px;text-align:right"></div>
+              <div class="d-flex justify-content-between small mb-1"><span class="text-body-tertiary">Token</span><span id="ti-masked">—</span></div>
+              <button class="btn btn-sm btn-outline-danger w-100 mt-1" id="delete-token-btn">移除 Token</button>
+            </div>
+          </div>
+
+          <hr class="my-2">
+
+          <!-- 方式 C：金鑰池 -->
+          <div id="auth-section-key-pool">
+            <div class="d-flex align-items-center gap-1 mb-1">
+              <span class="small text-body-tertiary">金鑰池</span>
+              <span class="badge bg-secondary" id="kp-badge">0</span>
+            </div>
+            <textarea class="form-control form-control-sm font-monospace" id="kp-input" rows="2" placeholder="eyJxxx..., eyJyyy..., eyJzzz..." style="font-size:11px;resize:vertical"></textarea>
+            <div class="d-flex gap-2 mt-1">
+              <button class="btn btn-sm btn-outline-primary flex-fill" id="kp-save-btn">儲存</button>
+              <button class="btn btn-sm btn-outline-danger" id="kp-clear-btn">清空</button>
+            </div>
+            <div id="kp-status" class="mt-1 d-none"></div>
           </div>
         </div>
       </div>
@@ -121,6 +153,10 @@ export function dashboardHtml(origin) {
             🧠 模型列表
             <button class="btn btn-sm btn-outline-warning ms-auto" id="fetch-models-btn">取得</button>
           </h6>
+          <div class="input-group input-group-sm mb-2 d-none" id="model-search-group">
+            <input type="text" class="form-control" id="model-search-input" placeholder="搜尋模型..." maxlength="100">
+            <button class="btn btn-outline-secondary" id="model-search-clear">✕</button>
+          </div>
           <div id="models-container" class="small text-body-tertiary"><i>尚未載入</i></div>
           <div class="model-grid d-none" id="model-grid"></div>
         </div>
@@ -166,14 +202,7 @@ export function dashboardHtml(origin) {
       <div class="card playground-card">
         <div class="card-body d-flex flex-column p-3">
           <div class="d-flex gap-2 mb-3 flex-shrink-0 align-items-center">
-            <select id="func-select" class="form-select form-select-sm" style="max-width:180px">
-              <option value="chat">💬 Chat</option>
-              <option value="image">🖼 Image Gen</option>
-              <option value="image-edit">🎨 Image Edit</option>
-              <option value="tts" disabled>🔊 TTS</option>
-              <option value="stt" disabled>🎤 STT</option>
-              <option value="embedding" disabled>📊 Embedding</option>
-            </select>
+            <label class="small text-body-tertiary text-nowrap">模型</label>
             <select id="model-select" class="form-select form-select-sm" style="max-width:220px">
               <option value="gpt-4o-mini">gpt-4o-mini</option>
               <option value="gpt-4o">gpt-4o</option>
@@ -196,23 +225,6 @@ export function dashboardHtml(origin) {
             <textarea id="chat-input" class="form-control" rows="2" placeholder="輸入訊息..." maxlength="32768" style="min-height:44px;resize:vertical" disabled></textarea>
             <button class="btn btn-primary flex-shrink-0" id="send-btn" style="height:44px" disabled>SEND</button>
             <button class="btn btn-outline-secondary d-none flex-shrink-0" id="stop-btn" style="height:44px">停止</button>
-          </div>
-
-          <div class="d-flex gap-2 input-row d-none" id="image-input-row">
-            <textarea class="form-control" id="image-prompt-input" placeholder="輸入圖片描述..." maxlength="1024" rows="2" style="min-height:44px;resize:vertical"></textarea>
-            <button class="btn btn-primary flex-shrink-0" id="gen-image-btn" style="height:44px" disabled>SEND</button>
-          </div>
-
-          <div class="d-flex gap-2 input-row d-none" id="image-edit-input-row">
-            <div class="d-flex flex-column gap-1 flex-fill">
-              <textarea class="form-control" id="edit-prompt-input" placeholder="編輯描述..." maxlength="1024" rows="2" style="min-height:44px;resize:vertical"></textarea>
-              <div class="d-flex align-items-center gap-2">
-                <input type="file" class="form-control form-control-sm" id="edit-image-file" accept="image/*" style="max-width:200px">
-                <img id="image-preview" class="d-none">
-                <small class="text-body-tertiary" id="edit-image-status">尚未選擇圖片</small>
-              </div>
-            </div>
-            <button class="btn btn-primary flex-shrink-0" id="edit-send-btn" style="height:44px" disabled>SEND</button>
           </div>
         </div>
       </div>
@@ -243,6 +255,7 @@ export function dashboardHtml(origin) {
 const API = ''
 const REQUEST_TIMEOUT = 60000
 let puterToken = null
+let hasKeyPool = false
 let clientToken = null
 let abortCtrl = null
 let streaming = false
@@ -270,7 +283,6 @@ const chatInput = $('chat-input')
 const sendBtn = $('send-btn')
 const stopBtn = $('stop-btn')
 const modelSelect = $('model-select')
-const funcSelect = $('func-select')
 const streamToggle = $('stream-toggle')
 const sysDot = $('sys-dot')
 const sysText = $('sys-text')
@@ -279,27 +291,18 @@ const signinPuterBtn = $('signin-puter-btn')
 const fetchModelsBtn = $('fetch-models-btn')
 const modelGrid = $('model-grid')
 const modelsContainer = $('models-container')
+const modelSearchInput = $('model-search-input')
+const modelSearchClear = $('model-search-clear')
+const modelSearchGroup = $('model-search-group')
 const clientTokenValue = $('client-token-value')
 const copyClientToken = $('copy-client-token')
 const rotateBtn = $('rotate-client-token')
 const puterStatusIcon = $('puter-status-icon')
+const authModeSelect = $('auth-mode-select')
 const puterStatusText = $('puter-status-text')
 const clearChatBtn = $('clear-chat-btn')
-const chatInputRow = $('chat-input-row')
-const imageInputRow = $('image-input-row')
-const imagePromptInput = $('image-prompt-input')
-const genImageBtn = $('gen-image-btn')
-const imageEditInputRow = $('image-edit-input-row')
-const editPromptInput = $('edit-prompt-input')
-const editImageFile = $('edit-image-file')
-const imagePreview = $('image-preview')
-const editImageStatus = $('edit-image-status')
-const editSendBtn = $('edit-send-btn')
 const themeToggle = $('theme-toggle')
-let editImageBase64 = null
 const logoutBtn = $('logout-btn')
-
-// ─── 主題切換 ────────────────────────────────────────────────
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-bs-theme', theme)
@@ -313,37 +316,9 @@ themeToggle.addEventListener('click', () => {
   applyTheme(current === 'dark' ? 'light' : 'dark')
 })
 
-// ─── 登出 ────────────────────────────────────────────────────
-
 logoutBtn.addEventListener('click', () => {
   sessionStorage.removeItem('dash_logged_in')
   location.reload()
-})
-
-// ─── 功能切換 ────────────────────────────────────────────────
-
-funcSelect.addEventListener('change', async () => {
-  const mode = funcSelect.value
-  const isChat = mode === 'chat'
-  const isImage = mode === 'image'
-  const isEdit = mode === 'image-edit'
-  chatInputRow.classList.toggle('d-none', !isChat)
-  imageInputRow.classList.toggle('d-none', !isImage)
-  imageEditInputRow.classList.toggle('d-none', !isEdit)
-  streamToggle.closest('.form-check').classList.toggle('d-none', !isChat)
-  clearChatBtn.classList.toggle('d-none', !(isChat || isImage || isEdit))
-  if (isChat) chatInput.focus()
-  else if (isImage) imagePromptInput.focus()
-  else if (isEdit) editPromptInput.focus()
-  // 根據功能篩選模型
-  try {
-    const res = await fetch(API + '/api/models')
-    const data = await res.json()
-    const models = data.models || []
-    populateModelSelect(models, mode)
-  } catch (_) {
-    populateModelSelect([], mode)
-  }
 })
 
 // Toggle token visibility
@@ -455,6 +430,69 @@ rotateBtn.addEventListener('click', async () => {
   }
 })
 
+const kpInput = $('kp-input')
+const kpSaveBtn = $('kp-save-btn')
+const kpClearBtn = $('kp-clear-btn')
+const kpBadge = $('kp-badge')
+const kpStatus = $('kp-status')
+
+async function loadKeyPool() {
+  try {
+    const res = await fetch(API + '/api/key-pool')
+    const data = await res.json()
+    kpInput.value = data.pool || ''
+    const count = data.count || 0
+    hasKeyPool = count > 0
+    kpBadge.textContent = count
+    kpBadge.className = 'badge bg-' + (count > 0 ? 'warning text-dark' : 'secondary')
+  } catch (_) {}
+}
+
+async function loadAuthMode() {
+  try {
+    const res = await fetch(API + '/api/auth-mode')
+    const data = await res.json()
+    applyAuthMode(data.mode || 'puter-signin')
+  } catch (_) {}
+}
+
+kpSaveBtn.addEventListener('click', async () => {
+  const pool = kpInput.value.trim()
+  kpSaveBtn.disabled = true
+  kpSaveBtn.textContent = '儲存中...'
+  try {
+    const res = await fetch(API + '/api/key-pool', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pool }),
+    })
+    if (res.ok) {
+      const count = pool ? pool.split(',').filter(t => t.trim()).length : 0
+      hasKeyPool = count > 0
+      kpBadge.textContent = count
+      kpBadge.className = 'badge bg-' + (count > 0 ? 'warning text-dark' : 'secondary')
+      updatePlaygroundState()
+      updatePuterStatus()
+      kpStatus.textContent = '✓ 已儲存 ' + count + ' 個金鑰'
+      kpStatus.className = 'mt-1 small text-success'
+      kpStatus.classList.remove('d-none')
+      setTimeout(() => kpStatus.classList.add('d-none'), 3000)
+    }
+  } catch (e) {
+    kpStatus.textContent = '✗ 儲存失敗: ' + e.message
+    kpStatus.className = 'mt-1 small text-danger'
+    kpStatus.classList.remove('d-none')
+  }
+  kpSaveBtn.disabled = false
+  kpSaveBtn.textContent = '儲存金鑰池'
+})
+
+kpClearBtn.addEventListener('click', async () => {
+  if (!confirm('確定要清空金鑰池嗎？')) return
+  kpInput.value = ''
+  kpSaveBtn.click()
+})
+
 async function loadTokenInfo() {
   try {
     const res = await fetch(API + '/api/token/info')
@@ -485,15 +523,40 @@ function updatePuterStatus() {
   if (puterToken) {
     puterStatusIcon.textContent = '✅'
     puterStatusText.textContent = 'Puter token 已就緒'
+  } else if (authModeSelect.value === 'key-pool' && hasKeyPool) {
+    puterStatusIcon.textContent = '✅'
+    puterStatusText.textContent = '金鑰池已就緒'
   } else {
     puterStatusIcon.textContent = '❌'
-    puterStatusText.textContent = 'Puter token 未授權'
+    puterStatusText.textContent = '尚未設定認證方式'
   }
 }
 
+function applyAuthMode(mode) {
+  authModeSelect.value = mode
+  // 顯示/隱藏各區段
+  const sections = ['puter-signin', 'manual-verify', 'key-pool']
+  sections.forEach(s => {
+    const el = $('auth-section-' + s)
+    if (el) el.style.opacity = s === mode ? '1' : '0.3'
+  })
+}
+
+authModeSelect.addEventListener('change', async () => {
+  const mode = authModeSelect.value
+  applyAuthMode(mode)
+  updatePuterStatus()
+  updatePlaygroundState()
+  await fetch(API + '/api/auth-mode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  })
+})
+
 fetchModelsBtn.addEventListener('click', async () => {
-  if (!puterToken) {
-    setSysStatus('error', '請先設定 Puter Token')
+  if (!isAuthorized()) {
+    setSysStatus('error', '請先設定 Puter Token 或填入金鑰池')
     return
   }
   fetchModelsBtn.disabled = true
@@ -514,20 +577,31 @@ fetchModelsBtn.addEventListener('click', async () => {
   fetchModelsBtn.textContent = '取得'
 })
 
+let _modelsData = []
+
+function filterModelGrid() {
+  const q = modelSearchInput.value.toLowerCase()
+  modelGrid.querySelectorAll('.model-item').forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none'
+  })
+}
+
 async function renderModels() {
   try {
     const res = await fetch(API + '/api/models')
     const data = await res.json()
-    const models = data.models || []
-    if (models.length === 0) {
+    _modelsData = data.models || []
+    if (_modelsData.length === 0) {
       modelsContainer.innerHTML = '<i>暫無模型資料</i>'
       modelGrid.classList.add('d-none')
       modelsContainer.classList.remove('d-none')
+      modelSearchGroup.classList.add('d-none')
       return
     }
     modelsContainer.classList.add('d-none')
     modelGrid.classList.remove('d-none')
-    modelGrid.innerHTML = models.map(m => {
+    modelSearchGroup.classList.remove('d-none')
+    modelGrid.innerHTML = _modelsData.map(m => {
       const ctx = m.context ? '<span class="badge bg-info" title="Max Token: ' + m.context + '" style="font-size:9px;padding:1px 5px">' + m.context + '</span>' : ''
       let typeLabel = ''
       try {
@@ -537,9 +611,13 @@ async function renderModels() {
       } catch (_) {}
       return '<div class="model-item" style="cursor:pointer" data-copy="' + m.id + '"><div class="font-monospace" style="font-size:11px">' + m.id + typeLabel + ' ' + ctx + '</div><div class="text-body-tertiary" style="font-size:9px">' + (m.provider || '—') + '</div></div>'
     }).join('')
-    populateModelSelect(models, funcSelect.value)
+    modelSearchInput.value = ''
+    populateModelSelect(_modelsData)
   } catch (_) {}
 }
+
+modelSearchInput.addEventListener('input', filterModelGrid)
+modelSearchClear.addEventListener('click', () => { modelSearchInput.value = ''; filterModelGrid(); modelSearchInput.focus() })
 
 function getModelType(m) {
   try {
@@ -548,30 +626,11 @@ function getModelType(m) {
   } catch (_) { return '' }
 }
 
-function filterModelsByFunc(models, func) {
-  const typeMap = {
-    chat: ['text', 'chat', 'vision', ''],
-    'image': ['image'],
-    'image-edit': ['image', 'vision', 'text', 'chat'],
-    tts: ['audio'],
-    stt: ['audio'],
-    embedding: ['embedding'],
-  }
-  const allowed = typeMap[func] || ['text', 'chat', '']
-  return models.filter(m => allowed.includes(getModelType(m)))
-}
-
-function populateModelSelect(models, filterFunc) {
+function populateModelSelect(models) {
   const current = modelSelect.value
-  const func = filterFunc || funcSelect.value
-  let filtered = filterModelsByFunc(models, func)
-  // 如果有 image-edit 但找不到 image 模型，保留全部以利使用
-  if (func === 'image-edit' && filtered.length === 0 && models.length > 0) {
-    filtered = models
-  }
   modelSelect.innerHTML = ''
-  if (filtered.length > 0) {
-    filtered.forEach(m => {
+  if (models.length > 0) {
+    models.forEach(m => {
       const opt = document.createElement('option')
       opt.value = m.id
       opt.textContent = m.id + ' (' + (getModelType(m) || 'text') + ')'
@@ -579,24 +638,14 @@ function populateModelSelect(models, filterFunc) {
       modelSelect.appendChild(opt)
     })
   } else {
-    const defaults = {
-      chat: ['gpt-4o-mini','gpt-4o','claude-sonnet-4','gemini-2.5-flash','deepseek-chat','grok-3'],
-      'image': ['gemini-2.5-flash-image','gpt-image-1.5','dall-e-3'],
-      'image-edit': ['gemini-2.5-flash-image','gpt-4o','gpt-4o-mini'],
-      tts: ['tts-1'],
-      stt: ['whisper-1'],
-      embedding: ['text-embedding-3-small'],
-    }
-    const ids = defaults[func] || defaults.chat
-    ids.forEach(id => {
+    const defaults = ['gpt-4o-mini','gpt-4o','claude-sonnet-4','gemini-2.5-flash','deepseek-chat','grok-3']
+    defaults.forEach(id => {
       const opt = document.createElement('option')
       opt.value = id; opt.textContent = id
       modelSelect.appendChild(opt)
     })
   }
 }
-
-// ─── Playground ──────────────────────────────────────────────
 
 clearChatBtn.addEventListener('click', () => {
   chatOutput.innerHTML = '<div class="text-body-tertiary fst-italic">對話已清空</div>'
@@ -717,7 +766,7 @@ async function sendMessage() {
   }
 
   streaming = false
-  chatInput.disabled = !puterToken
+  chatInput.disabled = !isAuthorized()
   sendBtn.classList.remove('d-none')
   stopBtn.classList.add('d-none')
   chatOutput.scrollTop = chatOutput.scrollHeight
@@ -732,161 +781,23 @@ chatInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
 })
 
-let imageAbortCtrl = null
 
-// Image Generation
-genImageBtn.addEventListener('click', async () => {
-  const prompt = imagePromptInput.value.trim()
-  if (!prompt) return
-
-  const model = modelSelect.value
-  genImageBtn.disabled = true
-  genImageBtn.textContent = 'SEND'
-
-  const resultDiv = document.createElement('div')
-  resultDiv.className = 'msg-assistant'
-  const resultBubble = document.createElement('div')
-  resultBubble.className = 'bubble'
-  resultDiv.appendChild(resultBubble)
-  chatOutput.appendChild(resultDiv)
-  chatOutput.scrollTop = chatOutput.scrollHeight
-
-  showLoading(resultBubble)
-  imageAbortCtrl = createAbortWithTimeout(REQUEST_TIMEOUT)
-
-  try {
-    const res = await fetch(API + '/api/playground/image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, prompt }),
-      signal: imageAbortCtrl.signal,
-    })
-    if (!res.ok) throw new Error(await res.text())
-    hideLoading(resultBubble)
-    const data = await res.json()
-    if (data.data?.[0]?.url) {
-      resultBubble.innerHTML = '<img src="' + data.data[0].url + '" style="max-width:100%;border-radius:8px" alt="' + prompt.replace(/"/g,'&quot;') + '">'
-    } else {
-      resultBubble.textContent = data.content || '(empty response)'
-    }
-  } catch (e) {
-    hideLoading(resultBubble)
-    if (e.name === 'AbortError') {
-      resultBubble.textContent = '[已逾時或中斷]'
-    } else {
-      resultBubble.textContent = '[錯誤: ' + e.message + ']'
-    }
-    resultDiv.className += ' text-danger'
-  }
-
-  imageAbortCtrl = null
-  imagePromptInput.value = ''
-  genImageBtn.disabled = true
-  chatOutput.scrollTop = chatOutput.scrollHeight
-})
-
-imagePromptInput.addEventListener('input', () => {
-  genImageBtn.disabled = !puterToken || !imagePromptInput.value.trim()
-})
-imagePromptInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); genImageBtn.click() }
-})
-
-// Image Edit (img2img)
-editImageFile.addEventListener('change', (e) => {
-  const file = e.target.files?.[0]
-  if (!file) {
-    editImageBase64 = null
-    imagePreview.classList.add('d-none')
-    editImageStatus.textContent = '尚未選擇圖片'
-    editSendBtn.disabled = true
-    return
-  }
-  editImageStatus.textContent = '讀取中...'
-  const reader = new FileReader()
-  reader.onload = (ev) => {
-    editImageBase64 = ev.target.result.split(',')[1]
-    imagePreview.src = ev.target.result
-    imagePreview.classList.remove('d-none')
-    editImageStatus.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)'
-    editSendBtn.disabled = !puterToken || !editPromptInput.value.trim()
-  }
-  reader.readAsDataURL(file)
-})
-
-editPromptInput.addEventListener('input', () => {
-  editSendBtn.disabled = !puterToken || !editPromptInput.value.trim() || !editImageBase64
-})
-
-let editAbortCtrl = null
-
-editSendBtn.addEventListener('click', async () => {
-  const prompt = editPromptInput.value.trim()
-  if (!prompt || !editImageBase64) return
-
-  const model = modelSelect.value
-  editSendBtn.disabled = true
-  editSendBtn.textContent = 'SEND'
-
-  const resultDiv = document.createElement('div')
-  resultDiv.className = 'msg-assistant'
-  const resultBubble = document.createElement('div')
-  resultBubble.className = 'bubble'
-  resultDiv.appendChild(resultBubble)
-  chatOutput.appendChild(resultDiv)
-  chatOutput.scrollTop = chatOutput.scrollHeight
-
-  showLoading(resultBubble)
-  editAbortCtrl = createAbortWithTimeout(REQUEST_TIMEOUT)
-
-  try {
-    const res = await fetch(API + '/api/playground/image-edit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, prompt, image: editImageBase64 }),
-      signal: editAbortCtrl.signal,
-    })
-    if (!res.ok) throw new Error(await res.text())
-    hideLoading(resultBubble)
-    const data = await res.json()
-    if (data.data?.[0]?.url) {
-      resultBubble.innerHTML = '<img src="' + data.data[0].url + '" style="max-width:100%;border-radius:8px" alt="' + prompt.replace(/"/g,'&quot;') + '">'
-    } else {
-      resultBubble.textContent = data.content || '(empty response)'
-    }
-  } catch (e) {
-    hideLoading(resultBubble)
-    if (e.name === 'AbortError') {
-      resultBubble.textContent = '[已逾時或中斷]'
-    } else {
-      resultBubble.textContent = '[錯誤: ' + e.message + ']'
-    }
-    resultDiv.className += ' text-danger'
-  }
-
-  editAbortCtrl = null
-  editPromptInput.value = ''
-  editSendBtn.disabled = true
-  chatOutput.scrollTop = chatOutput.scrollHeight
-})
-
-editPromptInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); editSendBtn.click() }
-})
 
 function setTokenStatus(type, msg, bsColor) {
   tokenStatus.classList.remove('d-none')
   tokenStatus.innerHTML = '<span class="badge bg-' + bsColor + ' me-1">' + (type === 'verifying' ? '⋯' : type === 'success' ? '✓' : '✗') + '</span>' + msg
 }
 
+function isAuthorized() {
+  return !!(puterToken || (authModeSelect.value === 'key-pool' && hasKeyPool))
+}
+
 function updatePlaygroundState() {
-  const hasToken = !!puterToken
-  chatInput.disabled = !hasToken
-  sendBtn.disabled = !hasToken
-  chatInput.placeholder = hasToken ? '輸入訊息...' : '請先在左側設定 Puter Token'
-  genImageBtn.disabled = !hasToken || !imagePromptInput.value.trim()
-  editSendBtn.disabled = !hasToken || !editPromptInput.value.trim() || !editImageBase64
-  if (hasToken) {
+  const ok = isAuthorized()
+  chatInput.disabled = !ok
+  sendBtn.disabled = !ok
+  chatInput.placeholder = ok ? '輸入訊息...' : '請先在左側設定 Puter Token 或填入金鑰池'
+  if (ok) {
     const ph = chatOutput.querySelector('.text-body-tertiary.fst-italic')
     if (ph) ph.remove()
   }
@@ -932,8 +843,6 @@ $('copy-curl-example')?.addEventListener('click', () => {
   btn.textContent = '✓'
   setTimeout(() => { btn.textContent = orig }, 2000)
 })
-
-// ─── Login / 密碼管理 ─────────────────────────────────────
 
 async function checkAuth() {
   try {
@@ -1088,7 +997,7 @@ dashPwInput.addEventListener('focus', () => {
 })
 
 async function init() {
-  await Promise.all([loadClientToken(), loadTokenInfo(), renderModels()])
+  await Promise.all([loadClientToken(), loadTokenInfo(), renderModels(), loadKeyPool(), loadAuthMode()])
   updatePuterStatus()
   updatePlaygroundState()
   if (modelSelect.options.length === 0) populateModelSelect([])
